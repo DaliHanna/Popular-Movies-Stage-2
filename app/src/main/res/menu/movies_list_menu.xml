@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/activity_movies_list_actiion_refresh"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_refresh_white_24dp"
+        android:title="@string/refresh" />
+
+    <group
+        android:id="@+id/activity_movies_list_sort_group"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/sort_by_popular"
+            android:title="@string/popular" />
+        <item
+            android:id="@+id/sort_by_highest"
+            android:title="@string/top_rated" />
+        <item
+            android:id="@+id/sort_by_favorite"
+            android:title="@string/favorite" />
+    </group>
+</menu>

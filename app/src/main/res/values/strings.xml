@@ -1,0 +1,43 @@
+<resources>
+    <string name="app_name">Popular Movies Stage 2</string>
+    <string name="no_internet_connection_try_again">You are not connected to Internet. When you get access to Internet, please click on Refresh button to try again!</string>
+    <string name="refresh">Refresh</string>
+    <string name="popular">Popular</string>
+    <string name="top_rated">Top Rated</string>
+    <string name="favorite">Favorite</string>
+
+    <string name="movies_list_sort_type" translatable="false">sort-type-key</string>
+    <string name="movies_list_bundle" translatable="false">movies-list-bundle-key</string>
+    <string name="movies_list_refresh_from_on_create" translatable="false">on_create</string>
+    <string name="movies_list_refresh_from_refresh" translatable="false">from_refresh</string>
+    <string name="movies_list_sort_by_popular" translatable="false">popular</string>
+    <string name="movies_list_sort_by_highest" translatable="false">top_rated</string>
+    <string name="movies_list_sort_by_favorite" translatable="false">favorite</string>
+    <string name="movies_from_list_to_details_intent" translatable="false">movies_from_list_to_details_intent</string>
+
+    <string name="exceptional_error">Sorry, an exception error just occured. Try again later! :(</string>
+    <string name="try_again">You don\' have Internet Connection! Try again later.</string>
+
+    <string name="movie_detail_title_label">Original Title:</string>
+    <string name="movie_detail_releasedate_label">Release Date:</string>
+    <string name="movie_detail_rating_label">User Rating:</string>
+    <string name="movie_details_synopsis_label">Synopsis:</string>
+
+    <string name="movie_details_bundle" translatable="false">movie-details-bundle-key</string>
+    <string name="movie_video_bundle" translatable="false">movie-video-bundle-key</string>
+    <string name="movie_review_bundle" translatable="false">movie-review-bundle-key</string>
+    <string name="movie_detail_trailers_list">Trailers:</string>
+    <string name="device_not_capable_to_watch">Sorry, your device cannot play videos.</string>
+    <string name="movie_review_author">Author</string>
+    <string name="movie_review_comment">Comment</string>
+    <string name="movie_detail_reviews_list">Reviews:</string>
+
+    <string name="movie_load_reviews">Load Reviews</string>
+    <string name="movie_details_poster_image">Poster Thumbnail of the Movie</string>
+    <string name="btn_add_to_favs">Add to Favorites</string>
+    <string name="btn_remove_from_favs">Remove from Favorites</string>
+    <string name="no_fav_movies">You don\'t have any movies in Favorite List</string>
+    <string name="movie_no_trailer_found">No trailer found </string>
+    <string name="movie_no_review_found">No review found </string>
+    <string name="errors">error call video</string>
+</resources>

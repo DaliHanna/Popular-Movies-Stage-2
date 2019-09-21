@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Using half of the width (768) of Nexus 4 as the default value -->
+    <integer name="default_width_divider">384</integer>
+
+    <integer name="rb_max_number_of_stars">5</integer>
+</resources>
