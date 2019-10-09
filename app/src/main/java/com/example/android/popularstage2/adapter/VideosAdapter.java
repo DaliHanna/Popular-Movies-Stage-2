@@ -11,17 +11,22 @@ import com.example.android.popularstage2.R;
 import com.example.android.popularstage2.model.Video;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideoViewHolder> {
 
-    private ArrayList<Video> mVideos;
+    private List<Video> mVideos;
     private Context mContext;
 
     private TrailerItemClickListener mTrailerItemClickListener;
-
-    public VideosAdapter(TrailerItemClickListener listener) {
-        mVideos = new ArrayList<>();
+    public interface TrailerItemClickListener {
+        void onTrailerClick(Video video);
+    }
+    public VideosAdapter(Context context,ArrayList<Video>items,TrailerItemClickListener listener) {
+        mVideos =items;
         mTrailerItemClickListener = listener;
+        mContext = context;
+
     }
 
     public void setVideosList(ArrayList<Video> videosList) {
@@ -31,10 +36,7 @@ public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideoViewH
     @Override
     public VideosAdapter.VideoViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         mContext = viewGroup.getContext();
-
         LayoutInflater inflater = LayoutInflater.from(mContext);
-
-
         View view = inflater.inflate( R.layout.movie_trailer, viewGroup, false);
         VideoViewHolder videoViewHolder = new VideoViewHolder(view);
 
@@ -52,8 +54,9 @@ public class VideosAdapter extends RecyclerView.Adapter<VideosAdapter.VideoViewH
         return mVideos == null ? 0 : mVideos.size();
     }
 
-    public interface TrailerItemClickListener {
-        void onTrailerClick(Video video);
+    public void setTrailerData(List<Video> trailerItemList) {
+        mVideos = trailerItemList;
+        notifyDataSetChanged();
     }
 
     class VideoViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {

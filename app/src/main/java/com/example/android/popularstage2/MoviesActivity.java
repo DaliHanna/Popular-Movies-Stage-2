@@ -1,5 +1,7 @@
 package com.example.android.popularstage2;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,8 +11,10 @@ import android.graphics.Point;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
+import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -19,13 +23,14 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.example.android.popularstage2.adapter.MoviesAdapter;
-import com.example.android.popularstage2.data.MovieContract;
+import com.example.android.popularstage2.database.FavoriteMovie;
 import com.example.android.popularstage2.model.Movie;
 import com.example.android.popularstage2.model.MoviesList;
 import com.example.android.popularstage2.databinding.ActivityMoviesListBinding;
 import com.example.android.popularstage2.utils.UrlInfo;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -51,7 +56,12 @@ public class MoviesActivity extends AppCompatActivity
 
     private MoviesAdapter mMoviesListAdapter;
 
-    private ArrayList<Movie> mMoviesListArray = null;
+    private ArrayList<Movie> mMoviesListArray;
+
+    private List<FavoriteMovie> favMovs;
+
+    private static final String TAG = MoviesActivity.class.getSimpleName();
+
 
     protected void onSaveInstanceState(Bundle outState) {
 
@@ -76,7 +86,7 @@ public class MoviesActivity extends AppCompatActivity
         super.onResume();
 
         if (mSortType.equals(getString(R.string.movies_list_sort_by_favorite))) {
-            loadFavList();
+            loadMovies();
         }
     }
 
@@ -85,11 +95,65 @@ public class MoviesActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movies_list);
 
+        favMovs = new ArrayList<FavoriteMovie>();
         mContext = this;
 
         initiateLayoutParams();
 
         checkForInfoInBundleOrPref(savedInstanceState);
+        setupViewModel();
+    }
+
+    private void setupViewModel() {
+        MainViewModel viewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        viewModel.getMovies().observe(this, new Observer<List<FavoriteMovie>>() {
+            @Override
+            public void onChanged(@Nullable List<FavoriteMovie> favs) {
+                if (favs.size() >= 0) {
+                    favMovs.clear();
+                    favMovs = favs;
+                }
+                for (int i = 0; i < favMovs.size(); i++) {
+                    Log.d(TAG, favMovs.get(i).getTitle());
+                }
+                loadMovies();
+            }
+        });
+    }
+
+    private void loadMovies() {
+        QueryMovie();
+    }
+
+    private void QueryMovie() {
+        if (mSortType.equals("favorite")) {
+            ClearMovieItemList();
+            for (int i = 0; i < favMovs.size(); i++) {
+                Movie mov = new Movie(
+                        String.valueOf(favMovs.get(i).getId()),
+                        favMovs.get(i).getTitle(),
+                        favMovs.get(i).getReleaseDate(),
+                        favMovs.get(i).getVote(),
+                        favMovs.get(i).getSynopsis(),
+                        favMovs.get(i).getImage(),
+                        favMovs.get(i).getBackdrop()
+                );
+                mMoviesListArray.add(mov);
+            }
+            mMoviesListAdapter.setMovieData(mMoviesListArray);
+
+        } else {
+            createListMovies(getString(R.string.movies_list_refresh_from_on_create));
+
+        }
+    }
+
+    private void ClearMovieItemList() {
+        if (mMoviesListArray != null) {
+            mMoviesListArray.clear();
+        } else {
+            mMoviesListArray = new ArrayList<Movie>();
+        }
     }
 
     private void initiateLayoutParams() {
@@ -110,7 +174,7 @@ public class MoviesActivity extends AppCompatActivity
 
         mBiding.rvMoviesList.setLayoutManager(gridLayoutManager);
 
-        mMoviesListAdapter = new MoviesAdapter(this);
+        mMoviesListAdapter = new MoviesAdapter(mMoviesListArray, this, this);
     }
 
     private void checkForInfoInBundleOrPref(Bundle savedInstanceState) {
@@ -140,6 +204,7 @@ public class MoviesActivity extends AppCompatActivity
         }
 
     }
+
 
     private void createListMovies(final String refreshFrom) {
         final ConnectivityManager cm =
@@ -273,12 +338,20 @@ public class MoviesActivity extends AppCompatActivity
             case R.id.sort_by_favorite:
                 updateMenuAndRefreshList(mSortType, getString(R.string.movies_list_sort_by_favorite), item);
 
-                loadFavList();
+                loadMovies();
 
                 break;
             case R.id.activity_movies_list_actiion_refresh:
 
-                createListMovies(getString(R.string.movies_list_refresh_from_refresh));
+                if (mSortType.equals("favorite"))
+                {
+                    updateMenuAndRefreshList(mSortType, getString(R.string.movies_list_sort_by_favorite), item);
+                    loadMovies();
+
+                }
+                else {
+                    createListMovies(getString(R.string.movies_list_refresh_from_refresh));
+                }
                 break;
             default:
                 break;
@@ -288,9 +361,6 @@ public class MoviesActivity extends AppCompatActivity
     }
 
     private void updateMenuAndRefreshList(String previouSort, String sort, MenuItem item) {
-        // We will only apply the query if the previous sort type selection is
-        // different from the new one (it the user wants to refresh the current
-        // screen content, s/he needs to click in REFRESH button instead)if (!mSortType.equals(sort)) {
         if (!previouSort.equals(sort)) {
             mSortType = sort;
             item.setChecked(true);
@@ -303,38 +373,12 @@ public class MoviesActivity extends AppCompatActivity
             mEditor.commit();
 
             if (sort.equals(getString(R.string.movies_list_sort_by_favorite))) {
-                loadFavList();
+                loadMovies();
             } else {
                 createListMovies(previouSort);
             }
         }
 
-    }
-
-    private void loadFavList() {
-        Cursor cursor = getContentResolver().query(MovieContract.MovieEntry.CONTENT_URI, null, null, null, null);
-        ArrayList<Movie> favoriteMoviesList = new ArrayList<>();
-
-        if (cursor.getCount() == 0) {
-            mBiding.tvMovieListInternetError.setVisibility(View.INVISIBLE);
-            mBiding.tvMovieListNoFavMovies.setVisibility(View.VISIBLE);
-            mBiding.rvMoviesList.setVisibility(View.INVISIBLE);
-
-        } else {
-            try {
-                while (cursor.moveToNext()) {
-                    favoriteMoviesList.add(new Movie(cursor));
-                }
-            } finally {
-                cursor.close();
-
-                mBiding.tvMovieListNoFavMovies.setVisibility(View.GONE);
-                mBiding.tvMovieListInternetError.setVisibility(View.GONE);
-
-                mMoviesListAdapter.setMoviesList(favoriteMoviesList);
-                mBiding.rvMoviesList.setAdapter(mMoviesListAdapter);
-            }
-        }
     }
 
     @Override

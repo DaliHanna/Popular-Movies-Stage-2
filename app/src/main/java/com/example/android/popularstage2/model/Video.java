@@ -4,10 +4,16 @@ package com.example.android.popularstage2.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.gson.annotations.SerializedName;
+
 public class Video implements Parcelable {
 
+    @SerializedName("key")
     private String key;
+
+    @SerializedName("name")
     private String name;
+
     private String site;
     private String size;
     private String type;

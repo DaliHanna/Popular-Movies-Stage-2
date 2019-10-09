@@ -1,29 +1,34 @@
 package com.example.android.popularstage2.model;
 
-import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.example.android.popularstage2.data.MovieContract;
 
 public class Movie implements Parcelable {
 
     private String id;
+
     private String original_title;
+
     private String poster_path;
+
     private String backdrop_path;
+
     private String overview;
+
     private String vote_average;
+
     private String release_date;
 
-    public Movie (Cursor cursor) {
-        this.id = cursor.getString(cursor.getColumnIndexOrThrow(MovieContract.MovieEntry.COLUMN_MOVIE_ID));
-        this.original_title = cursor.getString(cursor.getColumnIndexOrThrow(MovieContract.MovieEntry.COLUMN_ORIGINAL_TITLE));
-        this.poster_path = cursor.getString(cursor.getColumnIndexOrThrow(MovieContract.MovieEntry.COLUMN_POSTER_PATH));
-        this.backdrop_path = cursor.getString(cursor.getColumnIndexOrThrow(MovieContract.MovieEntry.COLUMN_BACK_PATH));
-        this.overview = cursor.getString(cursor.getColumnIndexOrThrow(MovieContract.MovieEntry.COLUMN_OVERVIEW));
-        this.vote_average = cursor.getString(cursor.getColumnIndexOrThrow(MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE));
-        this.release_date = cursor.getString(cursor.getColumnIndexOrThrow(MovieContract.MovieEntry.COLUMN_RELEASE_DATE));
+
+    public Movie(String id, String title, String releaseDate, String vote, String synopsis, String image, String backdrop) {
+        this.id = id;
+        this.original_title = title;
+        this.release_date = releaseDate;
+        this.vote_average = vote;
+        this.overview = synopsis;
+        this.poster_path = image;
+        this.backdrop_path = backdrop;
     }
 
     private Movie(Parcel in) {

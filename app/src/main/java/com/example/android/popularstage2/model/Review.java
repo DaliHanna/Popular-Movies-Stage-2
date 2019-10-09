@@ -2,8 +2,15 @@ package com.example.android.popularstage2.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.google.gson.annotations.SerializedName;
+
 public class Review implements Parcelable {
+
+    @SerializedName("author")
     private String author;
+
+    @SerializedName("content")
     private String content;
     private String url;
 

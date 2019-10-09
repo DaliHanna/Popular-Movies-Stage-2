@@ -11,11 +11,13 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.android.popularstage2.adapter.ReviewsAdapter;
 import com.example.android.popularstage2.adapter.VideosAdapter;
-import com.example.android.popularstage2.data.MovieContract;
+import com.example.android.popularstage2.database.FavoriteMovie;
+import com.example.android.popularstage2.database.MovieDatabase;
 import com.example.android.popularstage2.model.Movie;
 import com.example.android.popularstage2.model.Review;
 import com.example.android.popularstage2.model.ReviewsList;
@@ -41,15 +43,17 @@ public class DetailsActivity extends AppCompatActivity
         implements VideosAdapter.TrailerItemClickListener {
 
     private Movie mMovie;
-    private ArrayList<Video> mVideosList = null;
-    private ArrayList<Review> mReviewsList = null;
+    private ArrayList<Video> mVideosList;
+    private ArrayList<Review> mReviewsList;
 
     private VideosAdapter mVideosListAdapter;
     private ReviewsAdapter mReviewsListAdapter;
 
     private ActivityMovieDetailsBinding mBinding;
 
-    private boolean mIsInFavoriteList;
+    Button button;
+    private MovieDatabase mDb;
+    private Boolean isFav = false;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -80,11 +84,72 @@ public class DetailsActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_details);
+        button = findViewById(R.id.btn_add_remove_to_favs);
 
         getValuesFromIntentOrBundle(savedInstanceState);
-
         initializeLayoutParams();
+
+        if (isFav) {
+            mBinding.btnAddRemoveToFavs.setText(getString(R.string.btn_remove_from_favs));
+        } else {
+            mBinding.btnAddRemoveToFavs.setText(getString(R.string.btn_add_to_favs));
+
+        }
+        mBinding.btnAddRemoveToFavs.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (isFav) {
+                    mBinding.btnAddRemoveToFavs.setText(getString(R.string.btn_add_to_favs));
+
+                } else {
+                    mBinding.btnAddRemoveToFavs.setText(getString(R.string.btn_remove_from_favs));
+
+
+                }
+                final FavoriteMovie mov = new FavoriteMovie(
+                        Integer.parseInt(mMovie.getId()),
+                        mMovie.getOriginal_title(),
+                        mMovie.getRelease_date(),
+                        mMovie.getVote_average(),
+                        mMovie.getOverview(),
+                        mMovie.getPoster_path(),
+                        mMovie.getBackdrop_path()
+                );
+                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isFav) {
+                            // delete item
+                            mDb.movieDao().deleteMovie(mov);
+                        } else {
+                            // insert item
+                            mDb.movieDao().insertMovie(mov);
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                boolean ischeck = !isFav;
+                                setFavorite(ischeck);
+                            }
+                        });
+                    }
+
+                });
+            }
+        });
+
+
     }
+
+    private void setFavorite(Boolean fav) {
+        if (fav) {
+            isFav = true;
+        } else {
+            isFav = false;
+        }
+    }
+
 
     private void getValuesFromIntentOrBundle(Bundle savedInstanceState) {
         if (savedInstanceState == null ||
@@ -93,6 +158,15 @@ public class DetailsActivity extends AppCompatActivity
 
             if (intent.hasExtra(getString(R.string.movies_from_list_to_details_intent))) {
                 mMovie = intent.getParcelableExtra(getString(R.string.movies_from_list_to_details_intent));
+
+                mDb = MovieDatabase.getInstance(getApplicationContext());
+                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        final FavoriteMovie fmov = mDb.movieDao().loadMovieById(Integer.parseInt(mMovie.getId()));
+                        setFavorite((fmov != null) ? true : false);
+                    }
+                });
             }
             return;
         }
@@ -132,11 +206,10 @@ public class DetailsActivity extends AppCompatActivity
             mBinding.rvMovieTrailersList.setLayoutManager(new LinearLayoutManager(this));
             mBinding.rvMovieReviewsList.setLayoutManager(new LinearLayoutManager(this));
 
-            mVideosListAdapter = new VideosAdapter(this);
+            mVideosListAdapter = new VideosAdapter(this, mVideosList, this);
+
             mReviewsListAdapter = new ReviewsAdapter();
 
-            // If we could not retrieve any list from the Bundle, we will query the internet to
-            // acquire the trailers.
             if (mVideosList == null) {
                 getTrailerContent(mMovie.getId());
             } else {
@@ -149,14 +222,6 @@ public class DetailsActivity extends AppCompatActivity
             if (mReviewsList != null) {
                 mReviewsListAdapter.setReviewsList(mReviewsList);
                 mBinding.rvMovieReviewsList.setAdapter(mReviewsListAdapter);
-            }
-
-            if (checkIfMovieIsInFavoriteList() != 0) {
-                mIsInFavoriteList = true;
-                mBinding.btnAddRemoveToFavs.setText(getString(R.string.btn_remove_from_favs));
-            } else {
-                mIsInFavoriteList = false;
-                mBinding.btnAddRemoveToFavs.setText(getString(R.string.btn_add_to_favs));
             }
         }
     }
@@ -268,67 +333,8 @@ public class DetailsActivity extends AppCompatActivity
     }
 
     public void AddOrRemoveToFavs(View view) {
-        int movieIdIfAny = checkIfMovieIsInFavoriteList();
-        if (movieIdIfAny > 0) {
-            RemoveFromFavs(movieIdIfAny);
-        } else {
-            AddToFavs();
-        }
+
 
     }
 
-    private void RemoveFromFavs(int movieIdIfAny) {
-        String message;
-
-        Uri uri = MovieContract.MovieEntry.CONTENT_URI;
-        uri = uri.buildUpon().appendPath(String.valueOf(movieIdIfAny)).build();
-        int deletedRows = getContentResolver().delete(uri, null, null);
-
-        if (deletedRows > 0) {
-            message = "Movie removed from Favorites" + movieIdIfAny;
-            mBinding.btnAddRemoveToFavs.setText(getString(R.string.btn_add_to_favs));
-        } else {
-            message = "error occurs while removing this movie from Favorites" + movieIdIfAny;
-        }
-
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-    }
-
-    private void AddToFavs() {
-        ContentValues contentValues = new ContentValues();
-
-        contentValues.put(MovieContract.MovieEntry.COLUMN_MOVIE_ID, mMovie.getId());
-        contentValues.put(MovieContract.MovieEntry.COLUMN_ORIGINAL_TITLE, mMovie.getOriginal_title());
-        contentValues.put(MovieContract.MovieEntry.COLUMN_BACK_PATH, mMovie.getBackdrop_path());
-        contentValues.put(MovieContract.MovieEntry.COLUMN_OVERVIEW, mMovie.getOverview());
-        contentValues.put(MovieContract.MovieEntry.COLUMN_POSTER_PATH, mMovie.getPoster_path());
-        contentValues.put(MovieContract.MovieEntry.COLUMN_RELEASE_DATE, mMovie.getRelease_date());
-        contentValues.put(MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE, mMovie.getVote_average());
-
-        Uri uri = getContentResolver().insert(MovieContract.MovieEntry.CONTENT_URI, contentValues);
-
-
-        if (uri != null) {
-            mBinding.btnAddRemoveToFavs.setText(getString(R.string.btn_remove_from_favs));
-            Toast.makeText(this, "Movie add to Favourite !", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private int checkIfMovieIsInFavoriteList() {
-        int movieIdIfAny = 0;
-        Cursor cursor = getContentResolver().query(
-                MovieContract.MovieEntry.CONTENT_URI,
-                null,
-                MovieContract.MovieEntry.COLUMN_MOVIE_ID + " = ?",
-                new String[]{mMovie.getId()},
-                null);
-
-        if (cursor.moveToFirst()) {
-            movieIdIfAny = Integer.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(MovieContract.MovieEntry._ID)));
-        }
-
-        cursor.close();
-
-        return movieIdIfAny;
-    }
 }

@@ -1,6 +1,8 @@
 package com.example.android.popularstage2.adapter;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,18 +16,23 @@ import com.example.android.popularstage2.utils.UrlInfo;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
 
 
 public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieViewHolder> {
 
-    private ArrayList<Movie> mMoviesList;
+    private List<Movie> mMoviesList;
     private Context mContext;
-
     private MovieItemClickListener mMovieItemClickListener;
 
-    public MoviesAdapter(MovieItemClickListener listener) {
-        mMoviesList = new ArrayList<>();
+    public interface MovieItemClickListener {
+        void onMovieClick(Movie movie);
+    }
+    public MoviesAdapter(List<Movie>movieItemList ,MovieItemClickListener listener,Context context) {
+        mMoviesList = movieItemList;
         mMovieItemClickListener = listener;
+        mContext = context;
     }
 
     public void setMoviesList(ArrayList<Movie> list) {
@@ -55,8 +62,11 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieViewH
         return mMoviesList != null ? mMoviesList.size() : 0;
     }
 
-    public interface MovieItemClickListener {
-        void onMovieClick(Movie movie);
+
+    public void setMovieData(List<Movie> movieItemList) {
+//        Log.d(TAG,"Num movies: " + movieItemList.size());
+        mMoviesList = movieItemList;
+        notifyDataSetChanged();
     }
 
     class MovieViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -80,6 +90,8 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieViewH
         }
 
         public void bind(int listIndex) {
+
+
             String image = UrlInfo.THE_MOVIE_DB_IMAGE_API_URL +
                     UrlInfo.THE_MOVIE_DB_DEFAULT_IMAGE_SIZE +
                     mMoviesList.get(listIndex).getPoster_path();
@@ -88,6 +100,9 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieViewH
             String title = mMoviesList.get(listIndex).getOriginal_title();
 
             textView.setText(title);
+
+
+
         }
 
     }
